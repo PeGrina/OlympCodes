@@ -18,7 +18,7 @@ using namespace std;
 
 /* Constants */
 const ld eps = 1e-10;
-const int maxn = 1e5, logn = 20, inf = 1e9 + 7;
+const int maxn = 3e5, logn = 20, inf = 1e9 + 7;
 
 vc <int> g[maxn];
 vc <int> euler;
@@ -51,19 +51,16 @@ void dfs (int u, int p = -1, int lst = 0, bool f = false) {
     tin[u] = Time++;
     ip[u] = tim;
     ip2[tim] = u;
-    if (f) {
-        lst = ip[u];
-        ip_en[ip[u]] = u;
-    }
-    en[u] = lst;
     euler.pb(u);
     tim++;
     for (int i = 0; i < sz(g[u]); ++i) {
         int v = g[u][i];
         if (v != p) {
             if (i != 0) {
+                en[v] = v;
                 dfs(v, u, lst, 1);
             } else {
+                en[v] = en[u];
                 dfs(v, u, lst, 0);
             }
         }
@@ -79,71 +76,52 @@ int t[maxn * 4], n;
 
 void build (int v, int tl, int tr) {
     if (tr - tl == 1) {
-        t[v] = a[ip2[tl]];
+        t[v] = 0;
         return;
     }
     int tm = (tl + tr) / 2;
     build(v * 2, tl, tm);
     build(v * 2 + 1, tm, tr);
-    t[v] = max(t[v * 2], t[v * 2 + 1]);
 }
 
-void upd (int v, int tl, int tr, int i) {
-    if (tr - tl == 1) {
-        t[v] = a[ip2[i]];
+void upd (int v, int tl, int tr, int l, int r, int x) {
+    if (r <= tl || tr <= l) return;
+    if (l <= tl && tr <= r) {
+        t[v] += x;
         return;
     }
     int tm = (tl + tr) / 2;
-    if (i < tm) upd(v * 2, tl, tm, i);
-    else upd(v * 2 + 1, tm, tr, i);
-    t[v] = max(t[v * 2], t[v * 2 + 1]);
+    upd(v * 2, tl, tm, l, r, x);
+    upd(v * 2 + 1, tm, tr, l, r, x);
 }
 
-int get (int v, int tl, int tr, int l, int r) {
-    if (tr <= l || r <= tl) return 0;
-    if (l <= tl && tr <= r) return t[v];
+int get (int v, int tl, int tr, int i) {
+    if (tr - tl == 1) return t[v];
     int tm = (tl + tr) / 2;
-    return max(get(v * 2, tl, tm, l, r), get(v * 2 + 1, tm, tr, l, r));
+    if (i < tm) return get(v * 2, tl, tm, i) + t[v];
+    return get(v * 2 + 1, tm, tr, i) + t[v];
 }
 
-void upd1 (int i, int x) {
-    a[i] = x;
-    upd(1, 0, n, ip[i]);
+int get (int i) {
+    return get(1, 0, n, ip[i]);
 }
 
-int get (int u, int v, int f = 0) {
-    int res = 0;
-    while (!is_ancestor(ip_en[en[u]], v)) {
-        res = max(res, get(1, 0, n, ip[ip_en[en[u]]], ip[u] + 1));
-        if (u == ip_en[en[u]]) u = pr[u];
-        else u = ip_en[en[u]];
+void up (int &u, int &v, int &x) {
+    while (!is_ancestor(en[u], v)) {
+        upd(1, 0, n, ip[en[u]], ip[u] + 1, x);
+        u = pr[en[u]];
     }
-    while (!is_ancestor(ip_en[en[v]], u)) {
-        res = max(res, get(1, 0, n, ip[ip_en[en[v]]], ip[v] + 1));
-        if (v == ip_en[en[v]]) v = pr[v];
-        else v = ip_en[en[v]];
-    }
-    if (!is_ancestor(u, v) && !is_ancestor(v, u)) {
-        if (is_ancestor(pr[u], v)) {
-            u = pr[u];
-            res = max(res, get(1, 0, n, ip[u], ip[v] + 1));
-        } else {
-            v = pr[v];
-            res = max(res, get(1, 0, n, ip[v], ip[u] + 1));
-        }
-    } else {
-        if (is_ancestor(u, v)) {
-            res = max(res, get(1, 0, n, ip[u], ip[v] + 1));
-        } else {
-            res = max(res, get(1, 0, n, ip[v], ip[u] + 1));
-        }
-    }
-    return res;
+}
+
+void upd (int u, int v, int x) {
+    up(u, v, x);
+    up(v, u, x);
+    if (!is_ancestor(u, v)) swap(u, v);
+    upd(1, 0, n, ip[u], ip[v] + 1, x);
 }
 
 void solve () {
     cin >> n;
-    forn (i, n) cin >> a[i];
     for (int i = 1; i < n; ++i) {
         int u, v;
         cin >> u >> v; --u; --v;
@@ -158,31 +136,22 @@ void solve () {
     while (q--) {
         char c;
         cin >> c;
-        if (c == '!') {
-            int i, h;
-            cin >> i >> h;
-            upd1(i - 1, h);
+        if (c == '+') {
+            int u, v, x;
+            cin >> u >> v >> x; --u; --v;
+            upd(u, v, x);
         } else {
-            int i, j;
-            cin >> i >> j; --i; --j;
-            cout << get(i, j, 0) << '\n';
-        }
+            int i;
+            cin >> i; --i;
+            cout << get(i) << '\n';
+        };
     }
 }
 
 /* Starting and precalcing */
 signed main() {
     // freopen("sequence.in","r",stdin);freopen("sequence.out","w",stdout);
-    // fast;
+    fast;
     solve();
     return 0;
 }
-/*
-3
-1 1 1
-1 2
-2 3
-2
-! 2 2
-? 3 3
- * */
