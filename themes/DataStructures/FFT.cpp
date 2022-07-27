@@ -2,7 +2,8 @@ using cd = complex <double>;
  
 const double pi = acos(-1);
  
-const int N = 1 << 17;
+const BIT = 17; // Uses 2 ^ (BIT + 1) > n
+const int N = 1 << mx;
 cd w[N + 1];
 int ret[N];
  
@@ -34,8 +35,8 @@ struct FFT {
             for (int block = 0; block < n; block += (2 << lvl)) {
                 for (int i = 0; i < (1 << lvl); ++i) {
                     int j = i + block;
-                    f[to][j] = f[cur][j] + w[i << (16 - lvl)] * f[cur][j + (1 << lvl)];
-                    f[to][j + (1 << lvl)] = f[cur][j] - w[i << (16 - lvl)] * f[cur][j + (1 << lvl)];
+                    f[to][j] = f[cur][j] + w[i << (BIT - 1 - lvl)] * f[cur][j + (1 << lvl)];
+                    f[to][j + (1 << lvl)] = f[cur][j] - w[i << (BIT - 1 - lvl)] * f[cur][j + (1 << lvl)];
                 }
             }
         }
