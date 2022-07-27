@@ -7,7 +7,14 @@ cd w[N + 1];
 int ret[N];
  
 struct FFT {
-    FFT () {}
+    FFT () {
+     w[0] = cd(1, 0);
+     double tmp = 2 * pi / N;
+     w[1] = cd(cos(tmp), sin(tmp));
+     for (int i = 2; i <= N; ++i) {
+      w[i] = w[i - 1] * w[1];
+     }
+    }
     vc <cd> fft (vc <cd> &a) {
         int n = sz(a);
         vc <int> rev(n);
